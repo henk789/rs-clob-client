@@ -41,6 +41,16 @@ impl RtdsMessage {
         }
     }
 
+    /// Try to extract the payload as a trade event.
+    #[must_use]
+    pub fn as_trade(&self) -> Option<Trade> {
+        if self.topic == "activity" && self.msg_type == "trades" {
+            serde_json::from_value(self.payload.clone()).ok()
+        } else {
+            None
+        }
+    }
+
     /// Try to extract the payload as a comment event.
     #[must_use]
     pub fn as_comment(&self) -> Option<Comment> {
@@ -74,6 +84,54 @@ pub struct ChainlinkPrice {
     pub timestamp: i64,
     /// Current price value
     pub value: Decimal,
+}
+
+/// Trade event payload.
+#[non_exhaustive]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Trade {
+    /// Asset identifier
+    pub asset: String,
+    /// Bio of the trader
+    pub bio: String,
+    /// Condition ID of the trade
+    #[serde(rename = "conditionId")]
+    pub condition_id: String,
+    /// Event slug
+    #[serde(rename = "eventSlug")]
+    pub event_slug: String,
+    /// Icon URL
+    pub icon: String,
+    /// Trader's name
+    pub name: String,
+    /// Outcome of the trade
+    pub outcome: String,
+    /// Outcome index
+    #[serde(rename = "outcomeIndex")]
+    pub outcome_index: i64,
+    /// Price of the trade
+    pub price: Decimal,
+    /// Profile image URL
+    #[serde(rename = "profileImage")]
+    pub profile_image: String,
+    /// Proxy wallet address
+    #[serde(rename = "proxyWallet")]
+    pub proxy_wallet: String,
+    /// Pseudonym of the trader
+    pub pseudonym: String,
+    /// Side of the trade (e.g., "BUY", "SELL")
+    pub side: String,
+    /// Size of the trade
+    pub size: Decimal,
+    /// Slug of the trade
+    pub slug: String,
+    /// Timestamp of the trade in Unix seconds
+    pub timestamp: i64,
+    /// Title of the event
+    pub title: String,
+    /// Transaction hash
+    #[serde(rename = "transactionHash")]
+    pub transaction_hash: String,
 }
 
 /// Comment event payload.
@@ -227,6 +285,46 @@ mod tests {
         let price = msg.as_chainlink_price().unwrap();
         assert_eq!(price.symbol, "eth/usd");
         assert_eq!(price.value, dec!(3456.78));
+    }
+
+    #[test]
+    fn parse_trade_message() {
+        let json = r#"{
+            "topic": "activity",
+            "type": "trades",
+            "timestamp": 1753314064237,
+            "payload": {
+                "asset": "0xabc123",
+                "bio": "Trader bio",
+                "conditionId": "cond-001",
+                "eventSlug": "event-xyz",
+                "icon": "https://example.com/icon.png",
+                "name": "TraderName",
+                "outcome": "Up",
+                "outcomeIndex": 1,
+                "price": 0.25,
+                "profileImage": "https://example.com/profile.png",
+                "proxyWallet": "0xdef456",
+                "pseudonym": "TraderPseudo",
+                "side": "BUY",
+                "size": 10.0,
+                "slug": "trade-slug",
+                "timestamp": 1753314064,
+                "title": "Trade Title",
+                "transactionHash": "0xhashvalue"
+            }
+        }"#;
+        let msgs = parse_messages(json.as_bytes()).unwrap();
+        assert_eq!(msgs.len(), 1);
+
+        let msg = &msgs[0];
+        assert_eq!(msg.topic, "activity");
+        assert_eq!(msg.msg_type, "trades");
+
+        let trade = msg.as_trade().unwrap();
+        assert_eq!(trade.asset, "0xabc123");
+        assert_eq!(trade.price, dec!(0.25));
+        assert_eq!(trade.size, dec!(10.0));
     }
 
     #[test]

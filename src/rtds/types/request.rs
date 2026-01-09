@@ -93,6 +93,17 @@ impl Subscription {
         }
     }
 
+    /// Create a subscription for trades.
+    #[must_use]
+    pub fn trades() -> Self {
+        Self {
+            topic: "activity".to_owned(),
+            msg_type: "trades".to_owned(),
+            filters: None,
+            clob_auth: None,
+        }
+    }
+
     /// Create a subscription for comments.
     #[must_use]
     pub fn comments(msg_type: Option<CommentType>) -> Self {
@@ -144,6 +155,9 @@ impl Serialize for Subscription {
             // See: https://github.com/Polymarket/rs-clob-client/issues/136
             if self.topic == "crypto_prices_chainlink" {
                 // Chainlink: emit filters as string, e.g. "{\"symbol\":\"btc/usd\"}"
+                map.serialize_entry("filters", filters)?;
+            } else if self.topic == "activity" && self.msg_type == "trades" {
+                // Trades: emit filters as string, e.g. "{\"market_slug\":\"slugstring\"}"
                 map.serialize_entry("filters", filters)?;
             } else if let Ok(json_value) = serde_json::from_str::<Value>(filters) {
                 // Other topics: parse and emit as raw JSON, e.g. ["btcusdt","ethusdt"]

@@ -5,7 +5,9 @@ use futures::StreamExt as _;
 
 use super::subscription::{SimpleParser, SubscriptionManager};
 use super::types::request::Subscription;
-use super::types::response::{ChainlinkPrice, Comment, CommentType, CryptoPrice, RtdsMessage};
+use super::types::response::{
+    ChainlinkPrice, Comment, CommentType, CryptoPrice, RtdsMessage, Trade,
+};
 use crate::Result;
 use crate::auth::state::{Authenticated, State, Unauthenticated};
 use crate::auth::{Credentials, Normal};
@@ -200,6 +202,29 @@ impl<S: State> Client<S> {
         Ok(stream.filter_map(|msg_result| async move {
             match msg_result {
                 Ok(msg) => msg.as_chainlink_price().map(Ok),
+                Err(e) => Some(Err(e)),
+            }
+        }))
+    }
+
+    /// Subscribe to trade events.
+    pub fn subscribe_trades(
+        &self,
+        filter: Option<String>,
+    ) -> Result<impl Stream<Item = Result<Trade>>> {
+        let mut subscription = Subscription::trades();
+        if let Some(filter_string) = filter {
+            subscription.filters = Some(filter_string);
+        }
+        println!(
+            "Subscribing to trades with subscription: {:?}",
+            subscription
+        );
+        let stream = self.inner.subscriptions.subscribe(subscription)?;
+
+        Ok(stream.filter_map(|msg_result| async move {
+            match msg_result {
+                Ok(msg) => msg.as_trade().map(Ok),
                 Err(e) => Some(Err(e)),
             }
         }))
