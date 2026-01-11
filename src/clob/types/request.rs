@@ -6,55 +6,67 @@
 use bon::Builder;
 use chrono::NaiveDate;
 use serde::Serialize;
-use serde_with::{StringWithSeparator, formats::CommaSeparator, serde_as, skip_serializing_none};
+use serde_with::{
+    DisplayFromStr, StringWithSeparator, formats::CommaSeparator, serde_as, skip_serializing_none,
+};
+#[cfg(feature = "rfq")]
+use {
+    crate::clob::types::{RfqSortBy, RfqSortDir, RfqState},
+    crate::{Timestamp, auth::ApiKey, types::Decimal},
+};
 
-#[cfg(feature = "rfq")]
-use crate::auth::ApiKey;
 use crate::clob::types::{AssetType, Side, SignatureType, TimeRange};
-#[cfg(feature = "rfq")]
-use crate::clob::types::{RfqSortBy, RfqSortDir, RfqState};
-#[cfg(feature = "rfq")]
-use crate::types::Decimal;
+use crate::types::U256;
 use crate::types::{Address, B256};
 
+#[serde_as]
 #[non_exhaustive]
 #[derive(Debug, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct MidpointRequest {
-    pub token_id: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub token_id: U256,
 }
 
+#[serde_as]
 #[non_exhaustive]
 #[derive(Debug, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct PriceRequest {
-    pub token_id: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub token_id: U256,
     pub side: Side,
 }
 
 #[non_exhaustive]
+#[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct SpreadRequest {
-    pub token_id: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub token_id: U256,
     pub side: Option<Side>,
 }
 
 #[non_exhaustive]
+#[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct OrderBookSummaryRequest {
-    pub token_id: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub token_id: U256,
     pub side: Option<Side>,
 }
 
 #[non_exhaustive]
+#[serde_as]
 #[derive(Debug, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct LastTradePriceRequest {
-    pub token_id: String,
+    #[serde_as(as = "DisplayFromStr")]
+    pub token_id: U256,
 }
 
 #[non_exhaustive]
@@ -70,19 +82,23 @@ pub struct PriceHistoryRequest {
     #[builder(into)]
     pub time_range: TimeRange,
     /// Optional fidelity (number of data points).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub fidelity: Option<u32>,
 }
 
 #[non_exhaustive]
+#[serde_as]
 #[derive(Debug, Default, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct CancelMarketOrderRequest {
     /// The market condition ID to cancel orders for.
     pub market: Option<B256>,
-    pub asset_id: Option<String>,
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub asset_id: Option<U256>,
 }
 
 #[non_exhaustive]
+#[serde_as]
 #[derive(Debug, Default, Clone, Builder, Serialize)]
 #[builder(on(String, into))]
 pub struct TradesRequest {
@@ -93,12 +109,14 @@ pub struct TradesRequest {
     pub maker_address: Option<Address>,
     /// The market condition ID to filter trades.
     pub market: Option<B256>,
-    pub asset_id: Option<String>,
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub asset_id: Option<U256>,
     pub before: Option<i64>,
     pub after: Option<i64>,
 }
 
 #[non_exhaustive]
+#[serde_as]
 #[derive(Debug, Default, Serialize, Builder)]
 #[builder(on(String, into))]
 pub struct OrdersRequest {
@@ -106,7 +124,8 @@ pub struct OrdersRequest {
     pub order_id: Option<String>,
     /// The market condition ID to filter orders.
     pub market: Option<B256>,
-    pub asset_id: Option<String>,
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub asset_id: Option<U256>,
 }
 
 #[non_exhaustive]
@@ -120,11 +139,13 @@ pub struct DeleteNotificationsRequest {
 }
 
 #[non_exhaustive]
+#[serde_as]
 #[derive(Debug, Default, Clone, Builder, Serialize)]
 #[builder(on(String, into))]
 pub struct BalanceAllowanceRequest {
     pub asset_type: AssetType,
-    pub token_id: Option<String>,
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub token_id: Option<U256>,
     pub signature_type: Option<SignatureType>,
 }
 
@@ -313,7 +334,7 @@ pub struct AcceptRfqQuoteRequest {
     /// Taker's amount in base units.
     pub taker_amount: Decimal,
     /// Outcome token ID.
-    pub token_id: String,
+    pub token_id: U256,
     /// Maker's address.
     pub maker: Address,
     /// Signer's address.
@@ -354,7 +375,7 @@ pub struct ApproveRfqOrderRequest {
     /// Taker's amount in base units.
     pub taker_amount: Decimal,
     /// Outcome token ID.
-    pub token_id: String,
+    pub token_id: U256,
     /// Maker's address.
     pub maker: Address,
     /// Signer's address.
@@ -364,7 +385,7 @@ pub struct ApproveRfqOrderRequest {
     /// Order nonce.
     pub nonce: String,
     /// Unix timestamp for order expiration.
-    pub expiration: i64,
+    pub expiration: Timestamp,
     /// Order side (BUY or SELL).
     pub side: Side,
     /// Fee rate in basis points.
@@ -388,7 +409,7 @@ mod tests {
         let market = b256!("0000000000000000000000000000000000000000000000000000000000010000");
         let request = TradesRequest::builder()
             .market(market)
-            .asset_id("100")
+            .asset_id(U256::from(100))
             .id("aa-bb")
             .maker_address(Address::ZERO)
             .build();
@@ -408,7 +429,7 @@ mod tests {
         let market = b256!("0000000000000000000000000000000000000000000000000000000000010000");
         let request = OrdersRequest::builder()
             .market(market)
-            .asset_id("100")
+            .asset_id(U256::from(100))
             .order_id("aa-bb")
             .build();
 
@@ -437,7 +458,7 @@ mod tests {
     fn balance_allowance_request_as_params_should_succeed() {
         let request = BalanceAllowanceRequest::builder()
             .asset_type(AssetType::Collateral)
-            .token_id("1".to_owned())
+            .token_id(U256::from(1))
             .signature_type(SignatureType::Eoa)
             .build();
 

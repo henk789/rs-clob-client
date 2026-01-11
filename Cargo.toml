@@ -63,11 +63,11 @@ rust_decimal = { version = "1.39.0", features = ["serde"] }
 rust_decimal_macros = "1.39.0"
 secrecy = { version = "0.10", features = ["serde"] }
 serde = "1.0.228"
+serde_html_form = { version = "0.4" }
 serde_ignored = { version = "0.1", optional = true }
 serde_json = "1.0.148"
 serde_path_to_error = { version = "0.1", optional = true }
 serde_repr = "0.1.20"
-serde_urlencoded = { version = "0.7.1" }
 serde_with = { version = "3.16.1", features = ["chrono_0_4"] }
 sha2 = "0.10.9"
 strum_macros = "0.27.2"
@@ -89,6 +89,7 @@ alloy = { version = "1.3.0", default-features = false, features = [
 anyhow = "1.0.100"
 aws-config = "1.8.12"
 aws-sdk-kms = "1.97.0"
+criterion = { version = "0.8.1", features = ["html_reports"] }
 futures-util = "0.3.31"
 httpmock = "0.8.2"
 tokio = { version = "1.49.0", features = ["rt-multi-thread", "macros"] }
@@ -188,6 +189,21 @@ required-features = ["rtds", "tracing"]
 name = "websocket_unsubscribe"
 path = "examples/clob/ws/unsubscribe.rs"
 required-features = ["clob", "ws"]
+
+[[bench]]
+name = "deserialize_clob"
+harness = false
+required-features = ["clob"]
+
+[[bench]]
+name = "deserialize_websocket"
+harness = false
+required-features = ["clob", "ws"]
+
+[[bench]]
+name = "clob_order_operations"
+harness = false
+required-features = ["clob"]
 
 # https://rust-lang.github.io/rust-clippy/master/index.html?versions=lte%3A88
 [lints.clippy]
