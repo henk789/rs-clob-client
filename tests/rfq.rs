@@ -21,6 +21,11 @@ use uuid::Uuid;
 use crate::common::{POLY_ADDRESS, create_authenticated};
 
 mod request {
+    use std::str::FromStr as _;
+
+    use polymarket_client_sdk::clob::types::request::Asset;
+    use polymarket_client_sdk::types::U256;
+
     use super::*;
 
     #[tokio::test]
@@ -46,8 +51,8 @@ mod request {
         });
 
         let request = CreateRfqRequestRequest::builder()
-            .asset_in("12345")
-            .asset_out("0")
+            .asset_in(Asset::Asset(U256::from_str("12345")?))
+            .asset_out(Asset::Usdc)
             .amount_in(dec!(50000000))
             .amount_out(dec!(3000000))
             .user_type(SignatureType::Eoa)
@@ -94,14 +99,14 @@ mod request {
 
         let mock = server.mock(|when, then| {
             when.method(httpmock::Method::GET)
-                .path("/rfq/request")
+                .path("/rfq/data/requests")
                 .header_exists(POLY_ADDRESS);
             then.status(StatusCode::OK).json_body(json!({
                 "data": [{
                     "requestId": "01968f1e-1182-71c4-9d40-172db9be82af",
-                    "user": "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5",
-                    "proxy": "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5",
-                    "market": "0x37a6a2dd9f3469495d9ec2467b0a764c5905371a294ce544bc3b2c944eb3e84a",
+                    "userAddress": "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5",
+                    "proxyAddress": "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5",
+                    "condition": "0x37a6a2dd9f3469495d9ec2467b0a764c5905371a294ce544bc3b2c944eb3e84a",
                     "token": "34097058504275310827233323421517291090691602969494795225921954353603704046623",
                     "complement": "32868290514114487320702931554221558599637733115139769311383916145370132125101",
                     "side": "BUY",
@@ -137,7 +142,7 @@ mod request {
 
         let mock = server.mock(|when, then| {
             when.method(httpmock::Method::GET)
-                .path("/rfq/request")
+                .path("/rfq/data/requests")
                 .query_param("next_cursor", "abc123")
                 .header_exists(POLY_ADDRESS);
             then.status(StatusCode::OK).json_body(json!({
@@ -159,6 +164,11 @@ mod request {
 }
 
 mod quote {
+    use std::str::FromStr as _;
+
+    use polymarket_client_sdk::clob::types::request::Asset;
+    use polymarket_client_sdk::types::U256;
+
     use super::*;
 
     #[tokio::test]
@@ -185,8 +195,8 @@ mod quote {
 
         let request = CreateRfqQuoteRequest::builder()
             .request_id("01968f1e-1182-71c4-9d40-172db9be82af")
-            .asset_in("0")
-            .asset_out("12345")
+            .asset_in(Asset::Usdc)
+            .asset_out(Asset::Asset(U256::from_str("12345")?))
             .amount_in(dec!(3000000))
             .amount_out(dec!(50000000))
             .user_type(SignatureType::Eoa)
@@ -232,15 +242,15 @@ mod quote {
 
         let mock = server.mock(|when, then| {
             when.method(httpmock::Method::GET)
-                .path("/rfq/quote")
+                .path("/rfq/data/quotes")
                 .header_exists(POLY_ADDRESS);
             then.status(StatusCode::OK).json_body(json!({
                 "data": [{
                     "quoteId": "0196f484-9fbd-74c1-bfc1-75ac21c1cf84",
                     "requestId": "01968f1e-1182-71c4-9d40-172db9be82af",
-                    "user": "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5",
-                    "proxy": "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5",
-                    "market": "0x37a6a2dd9f3469495d9ec2467b0a764c5905371a294ce544bc3b2c944eb3e84a",
+                    "userAddress": "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5",
+                    "proxyAddress": "0x6e0c80c90ea6c15917308f820eac91ce2724b5b5",
+                    "condition": "0x37a6a2dd9f3469495d9ec2467b0a764c5905371a294ce544bc3b2c944eb3e84a",
                     "token": "34097058504275310827233323421517291090691602969494795225921954353603704046623",
                     "complement": "32868290514114487320702931554221558599637733115139769311383916145370132125101",
                     "side": "BUY",
@@ -296,10 +306,10 @@ mod execution {
             .maker(maker)
             .signer(maker)
             .taker(Address::ZERO)
-            .nonce("0")
+            .nonce(0)
             .expiration(0)
             .side(Side::Buy)
-            .fee_rate_bps("0")
+            .fee_rate_bps(0)
             .signature("0x1234")
             .salt("123")
             .owner(Uuid::nil())
@@ -336,10 +346,10 @@ mod execution {
             .maker(maker)
             .signer(maker)
             .taker(Address::ZERO)
-            .nonce("0")
+            .nonce(0)
             .expiration(0)
             .side(Side::Buy)
-            .fee_rate_bps("0")
+            .fee_rate_bps(0)
             .signature("0x1234")
             .salt("123")
             .owner(Uuid::nil())
@@ -359,7 +369,11 @@ mod execution {
 }
 
 mod error_handling {
+    use std::str::FromStr as _;
+
+    use polymarket_client_sdk::clob::types::request::Asset;
     use polymarket_client_sdk::error::Kind;
+    use polymarket_client_sdk::types::U256;
 
     use super::*;
 
@@ -375,8 +389,8 @@ mod error_handling {
         });
 
         let request = CreateRfqRequestRequest::builder()
-            .asset_in("12345")
-            .asset_out("0")
+            .asset_in(Asset::Asset(U256::from_str("12345")?))
+            .asset_out(Asset::Usdc)
             .amount_in(dec!(50000000))
             .amount_out(dec!(3000000))
             .user_type(SignatureType::Eoa)

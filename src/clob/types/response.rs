@@ -132,6 +132,9 @@ pub struct OrderBookSummaryResponse {
     pub neg_risk: bool,
     #[serde_as(as = "TryFromInto<Decimal>")]
     pub tick_size: TickSize,
+    #[serde(default)]
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    pub last_trade_price: Option<Decimal>,
 }
 
 impl OrderBookSummaryResponse {
@@ -435,9 +438,6 @@ pub struct NotificationPayload {
 #[non_exhaustive]
 #[allow(
     clippy::allow_attributes,
-    reason = "Bon will generate code that has an allow attribute for some reason on the `allowances` field"
-)]
-#[allow(
     clippy::allow_attributes_without_reason,
     reason = "Bon will generate code that has an allow attribute for some reason on the `allowances` field"
 )]
@@ -757,15 +757,15 @@ pub struct RfqRequest {
     /// Unique request identifier.
     pub request_id: String,
     /// User's address.
-    pub user: Address,
+    pub user_address: Address,
     /// Proxy address (may be same as user).
-    pub proxy: Address,
+    pub proxy_address: Address,
     /// Market condition ID.
-    pub market: B256,
+    pub condition: B256,
     /// Token ID for the outcome token.
-    pub token: String,
+    pub token: U256,
     /// Complement token ID.
-    pub complement: String,
+    pub complement: U256,
     /// Order side (BUY or SELL).
     pub side: Side,
     /// Size of tokens to receive.
@@ -790,15 +790,15 @@ pub struct RfqQuote {
     /// Request ID this quote is for.
     pub request_id: String,
     /// Quoter's address.
-    pub user: Address,
+    pub user_address: Address,
     /// Proxy address (may be same as user).
-    pub proxy: Address,
+    pub proxy_address: Address,
     /// Market condition ID.
-    pub market: B256,
+    pub condition: B256,
     /// Token ID for the outcome token.
-    pub token: String,
+    pub token: U256,
     /// Complement token ID.
-    pub complement: String,
+    pub complement: U256,
     /// Order side (BUY or SELL).
     pub side: Side,
     /// Size of tokens to receive.
