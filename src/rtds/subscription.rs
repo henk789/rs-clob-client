@@ -188,7 +188,11 @@ impl SubscriptionManager {
         }
 
         // Check if we need to send a new subscription request
-        let is_new = !self.subscribed_topics.contains(&topic_type);
+        let topic_exists = self.subscribed_topics.contains(&topic_type);
+        let is_new = !self.active_subs.iter().any(|entry| {
+            entry.value().topic_type == topic_type && entry.value().filters == subscription.filters
+        });
+        println!("Subscription is_new: {}", is_new);
         if is_new {
             self.subscribed_topics.insert(topic_type.clone());
 
@@ -200,7 +204,8 @@ impl SubscriptionManager {
             );
 
             let request = SubscriptionRequest::subscribe(vec![subscription.clone()]);
-            self.connection.send(&request)?;
+            self.connection.send(&request);
+            println!("Subscribed to RTDS topic {:?}", request);
         } else {
             #[cfg(feature = "tracing")]
             tracing::debug!(
@@ -211,7 +216,12 @@ impl SubscriptionManager {
         }
 
         // Register subscription info
-        let sub_id = format!("{}:{}", topic_type.topic, topic_type.msg_type);
+        let sub_id = format!(
+            "{}:{}.{}",
+            topic_type.topic,
+            topic_type.msg_type,
+            subscription.filters.clone().unwrap_or_default()
+        );
         self.active_subs.insert(
             sub_id,
             SubscriptionInfo {
@@ -226,6 +236,7 @@ impl SubscriptionManager {
         let mut rx = self.connection.subscribe();
         let target_topic = topic_type.topic;
         let target_type = topic_type.msg_type;
+        let target_filters = subscription.filters;
 
         Ok(try_stream! {
             loop {
@@ -250,6 +261,44 @@ impl SubscriptionManager {
                 }
             }
         })
+    }
+
+    /// Unsubscribe from a topic with the given configuration.
+    pub fn unsubscribe(&self, subscription: Subscription) {
+        let topic_type = TopicType::new(subscription.topic.clone(), subscription.msg_type.clone());
+
+        let sub_id = format!(
+            "{}:{}.{}",
+            topic_type.topic,
+            topic_type.msg_type,
+            subscription.filters.as_deref().unwrap_or_default()
+        );
+
+        if self.active_subs.remove(&sub_id).is_some() {
+            #[cfg(feature = "tracing")]
+            tracing::debug!(
+                topic = %subscription.topic,
+                msg_type = %subscription.msg_type,
+                filter = ?subscription.filters,
+                "Unsubscribing from RTDS topic"
+            );
+
+            let request = SubscriptionRequest::unsubscribe(vec![subscription]);
+
+            if let Err(e) = self.connection.send(&request) {
+                #[cfg(feature = "tracing")]
+                tracing::warn!("Failed to send unsubscribe request: {}", e);
+            }
+
+            let topic_still_active = self
+                .active_subs
+                .iter()
+                .any(|entry| entry.value().topic_type == topic_type);
+
+            if !topic_still_active {
+                self.subscribed_topics.remove(&topic_type);
+            }
+        }
     }
 
     /// Get information about all active subscriptions.

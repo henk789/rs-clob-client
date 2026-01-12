@@ -216,10 +216,6 @@ impl<S: State> Client<S> {
         if let Some(filter_string) = filter {
             subscription.filters = Some(filter_string);
         }
-        println!(
-            "Subscribing to trades with subscription: {:?}",
-            subscription
-        );
         let stream = self.inner.subscriptions.subscribe(subscription)?;
 
         Ok(stream.filter_map(|msg_result| async move {
@@ -228,6 +224,15 @@ impl<S: State> Client<S> {
                 Err(e) => Some(Err(e)),
             }
         }))
+    }
+
+    // /// Unsubscribe from trade events.
+    pub fn unsubscribe_trades(&self, filter: Option<String>) {
+        let mut subscription = Subscription::trades();
+        if let Some(filter_string) = filter {
+            subscription.filters = Some(filter_string);
+        }
+        let stream = self.inner.subscriptions.unsubscribe(subscription);
     }
 
     /// Subscribe to raw RTDS messages for a custom topic/type combination.
