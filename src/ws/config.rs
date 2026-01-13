@@ -21,6 +21,8 @@ pub struct Config {
     pub heartbeat_interval: Duration,
     /// Maximum time to wait for PONG response before considering connection dead
     pub heartbeat_timeout: Duration,
+    /// Style of heartbeat message to send
+    pub heartbeat_message: HeartbeatMessage,
     /// Reconnection strategy configuration
     pub reconnect: ReconnectConfig,
 }
@@ -30,8 +32,16 @@ impl Default for Config {
         Self {
             heartbeat_interval: DEFAULT_HEARTBEAT_INTERVAL_DURATION,
             heartbeat_timeout: DEFAULT_HEARTBEAT_TIMEOUT_DURATION,
+            heartbeat_message: HeartbeatMessage::Text,
             reconnect: ReconnectConfig::default(),
         }
+    }
+}
+
+impl Config {
+    pub fn with_heartbeat_message(mut self, message: HeartbeatMessage) -> Self {
+        self.heartbeat_message = message;
+        self
     }
 }
 
@@ -70,6 +80,12 @@ impl From<ReconnectConfig> for ExponentialBackoff {
             .with_max_elapsed_time(None) // We handle max attempts separately
             .build()
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HeartbeatMessage {
+    Frame,
+    Text,
 }
 
 #[cfg(test)]

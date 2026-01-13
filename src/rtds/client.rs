@@ -15,6 +15,7 @@ use crate::error::Error;
 use crate::types::Address;
 use crate::ws::ConnectionManager;
 use crate::ws::config::Config;
+use crate::ws::config::HeartbeatMessage;
 use crate::ws::connection::ConnectionState;
 
 /// RTDS (Real-Time Data Socket) client for streaming Polymarket data.
@@ -51,8 +52,11 @@ pub struct Client<S: State = Unauthenticated> {
 
 impl Default for Client<Unauthenticated> {
     fn default() -> Self {
-        Self::new("wss://ws-live-data.polymarket.com", Config::default())
-            .expect("RTDS client with default endpoint should succeed")
+        Self::new(
+            "wss://ws-live-data.polymarket.com",
+            Config::default().with_heartbeat_message(HeartbeatMessage::Frame),
+        )
+        .expect("RTDS client with default endpoint should succeed")
     }
 }
 

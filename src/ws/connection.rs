@@ -3,6 +3,7 @@
     reason = "Connection types expose their domain in the name for clarity"
 )]
 
+use bytes::Bytes;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::time::Instant;
@@ -22,6 +23,7 @@ use super::traits::MessageParser;
 use crate::auth::Credentials;
 use crate::error::Kind;
 use crate::ws::WithCredentials;
+use crate::ws::config::HeartbeatMessage;
 use crate::{Result, error::Error};
 
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
@@ -231,8 +233,9 @@ where
         let (pong_tx, pong_rx) = watch::channel(Instant::now());
         let (ping_tx, mut ping_rx) = mpsc::unbounded_channel();
 
+        let heartbeat_config = config.clone();
         let heartbeat_handle = tokio::spawn(async move {
-            Self::heartbeat_loop(ping_tx, state_rx, &config, pong_rx).await;
+            Self::heartbeat_loop(ping_tx, state_rx, &heartbeat_config, pong_rx).await;
         });
 
         loop {
@@ -241,6 +244,9 @@ where
                 Some(msg) = read.next() => {
                     match msg {
                         Ok(Message::Text(text)) if text == "PONG" => {
+                            _ = pong_tx.send(Instant::now());
+                        }
+                        Ok(Message::Pong(_)) => {
                             _ = pong_tx.send(Instant::now());
                         }
                         Ok(Message::Text(text)) => {
@@ -278,7 +284,8 @@ where
                                 WsError::Connection(e),
                             ));
                         }
-                        _ => {
+                        m => {
+                            println!("Ignoring non-text WebSocket message {:?}", m);
                             // Ignore binary frames and unsolicited PONG replies.
                         }
                     }
@@ -293,8 +300,17 @@ where
 
                 // Handle PING requests from heartbeat loop
                 Some(()) = ping_rx.recv() => {
-                    if write.send(Message::Text("PING".into())).await.is_err() {
-                        break;
+                    match config.heartbeat_message {
+                        HeartbeatMessage::Text => {
+                            if write.send(Message::Text("PING".into())).await.is_err() {
+                                break;
+                            }
+                        }
+                        HeartbeatMessage::Frame => {
+                            if write.send(Message::Ping(Bytes::new()).into()).await.is_err() {
+                                break;
+                            }
+                        }
                     }
                 }
 
