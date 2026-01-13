@@ -373,7 +373,6 @@ where
     /// Send a subscription request to the WebSocket server.
     pub fn send<R: Serialize>(&self, request: &R) -> Result<()> {
         let json = serde_json::to_string(request)?;
-        println!("Sending RTDS request: {}", json);
         self.sender_tx
             .send(json)
             .map_err(|_e| WsError::ConnectionClosed)?;

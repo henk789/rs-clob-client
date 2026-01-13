@@ -2,7 +2,7 @@ use std::fmt;
 
 use bon::Builder;
 use serde::de::{IgnoredAny, MapAccess, SeqAccess, Visitor};
-use serde::{Deserialize, Deserializer as _};
+use serde::{Deserialize, Deserializer as _, Serialize};
 use serde_json::Deserializer;
 use serde_with::{DisplayFromStr, NoneAsEmptyString, serde_as};
 
@@ -68,7 +68,7 @@ impl WsMessage {
 /// state of the orderbook with bids and asks arrays.
 #[non_exhaustive]
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct BookUpdate {
     /// Asset/token identifier
     pub asset_id: U256,
@@ -89,7 +89,7 @@ pub struct BookUpdate {
 
 /// Individual price level in an orderbook.
 #[non_exhaustive]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct OrderBookLevel {
     /// Price at this level
     pub price: Decimal,
@@ -102,7 +102,7 @@ pub struct OrderBookLevel {
 /// The server sends either a single price change or a batch. This struct captures both shapes.
 #[non_exhaustive]
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct PriceChange {
     /// Market condition ID
     pub market: B256,
@@ -113,7 +113,7 @@ pub struct PriceChange {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct PriceChangeBatchEntry {
     /// Asset/token identifier
     pub asset_id: U256,
@@ -138,7 +138,7 @@ pub struct PriceChangeBatchEntry {
 /// Tick size change event (triggered when price crosses thresholds).
 #[non_exhaustive]
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct TickSizeChange {
     /// Asset/token identifier
     pub asset_id: U256,
@@ -156,7 +156,7 @@ pub struct TickSizeChange {
 /// Last trade price update.
 #[non_exhaustive]
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct LastTradePrice {
     /// Asset/token identifier
     pub asset_id: U256,
@@ -180,7 +180,7 @@ pub struct LastTradePrice {
 /// Emitted when the best bid and ask prices for a market change.
 #[non_exhaustive]
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct BestBidAsk {
     /// Market condition ID
     pub market: B256,
@@ -202,7 +202,7 @@ pub struct BestBidAsk {
 /// Emitted when a new market is created.
 #[non_exhaustive]
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct NewMarket {
     /// Market ID
     pub id: String,
@@ -232,7 +232,7 @@ pub struct NewMarket {
 /// Emitted when a market is resolved.
 #[non_exhaustive]
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct MarketResolved {
     /// Market ID
     pub id: String,
@@ -263,7 +263,7 @@ pub struct MarketResolved {
 
 /// Event message object for market events.
 #[non_exhaustive]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct EventMessage {
     /// Event message ID
     pub id: String,
@@ -279,7 +279,7 @@ pub struct EventMessage {
 
 /// Maker order details within a trade message.
 #[non_exhaustive]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct MakerOrder {
     /// Asset/token identifier of the maker order
     pub asset_id: U256,
@@ -303,7 +303,7 @@ pub enum TradeMessageType {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum TradeMessageStatus {
     #[serde(alias = "matched", alias = "MATCHED")]
     Matched,
@@ -377,7 +377,7 @@ pub struct TradeMessage {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum OrderMessageType {
     #[serde(alias = "placement", alias = "PLACEMENT")]
     Placement,
@@ -392,7 +392,7 @@ pub enum OrderMessageType {
 /// User order update message (authenticated channel only).
 #[non_exhaustive]
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct OrderMessage {
     /// Order identifier
     pub id: String,
@@ -458,7 +458,7 @@ pub enum OrderStatus {
 /// Calculated midpoint update (derived from orderbook).
 #[non_exhaustive]
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 pub struct MidpointUpdate {
     /// Asset/token identifier
     pub asset_id: U256,

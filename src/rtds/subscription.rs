@@ -192,7 +192,6 @@ impl SubscriptionManager {
         let is_new = !self.active_subs.iter().any(|entry| {
             entry.value().topic_type == topic_type && entry.value().filters == subscription.filters
         });
-        println!("Subscription is_new: {}", is_new);
         if is_new {
             self.subscribed_topics.insert(topic_type.clone());
 
@@ -205,7 +204,6 @@ impl SubscriptionManager {
 
             let request = SubscriptionRequest::subscribe(vec![subscription.clone()]);
             self.connection.send(&request);
-            println!("Subscribed to RTDS topic {:?}", request);
         } else {
             #[cfg(feature = "tracing")]
             tracing::debug!(
