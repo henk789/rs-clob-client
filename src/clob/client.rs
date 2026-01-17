@@ -53,7 +53,7 @@ use crate::clob::types::{
     RfqRequestsRequest,
 };
 use crate::clob::types::{SignableOrder, SignatureType, SignedOrder, TickSize};
-use crate::error::{Error, Synchronization};
+use crate::error::{Error, Kind as ErrorKind, Synchronization};
 use crate::types::Address;
 use crate::{
     AMOY, POLYGON, Result, Timestamp, ToQueryParams as _, auth, contract_config,
@@ -458,7 +458,12 @@ impl ClientInner<Unauthenticated> {
     ) -> Result<Credentials> {
         match self.create_api_key(signer, nonce).await {
             Ok(creds) => Ok(creds),
-            Err(_) => self.derive_api_key(signer, nonce).await,
+            Err(err) if err.kind() == ErrorKind::Status => {
+                // Only fall back to derive_api_key for HTTP status errors (server responded
+                // with an error, e.g., key already exists). Propagate network/internal errors.
+                self.derive_api_key(signer, nonce).await
+            }
+            Err(err) => Err(err),
         }
     }
 
@@ -1798,7 +1803,7 @@ impl<K: Kind> Client<Authenticated<K>> {
         date: NaiveDate,
         next_cursor: Option<String>,
     ) -> Result<Page<UserEarningResponse>> {
-        let cursor = next_cursor.map_or(String::new(), |c| format!("&next_cursor={c}"));
+        let cursor = next_cursor.map_or(String::new(), |c| format!("?next_cursor={c}"));
         let request = self
             .client()
             .request(Method::GET, format!("{}rewards/user{cursor}", self.host()))
@@ -1911,7 +1916,7 @@ impl<K: Kind> Client<Authenticated<K>> {
         &self,
         next_cursor: Option<String>,
     ) -> Result<Page<CurrentRewardResponse>> {
-        let cursor = next_cursor.map_or(String::new(), |c| format!("&next_cursor={c}"));
+        let cursor = next_cursor.map_or(String::new(), |c| format!("?next_cursor={c}"));
         let request = self
             .client()
             .request(
