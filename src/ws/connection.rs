@@ -161,6 +161,14 @@ where
         let mut backoff: backoff::ExponentialBackoff = config.reconnect.clone().into();
 
         loop {
+            // Check if ConnectionManager was dropped (all sender_tx instances gone)
+            if sender_rx.is_closed() {
+                #[cfg(feature = "tracing")]
+                tracing::debug!("Sender channel closed, stopping connection loop");
+                _ = state_tx.send(ConnectionState::Disconnected);
+                break;
+            }
+
             let state_rx = state_tx.subscribe();
 
             _ = state_tx.send(ConnectionState::Connecting);
@@ -188,7 +196,7 @@ where
                         #[cfg(feature = "tracing")]
                         tracing::error!("Error handling connection: {e:?}");
                         #[cfg(not(feature = "tracing"))]
-                        let _ = &e;
+                        let _: &_ = &e;
                     }
                 }
                 Err(e) => {
@@ -196,7 +204,7 @@ where
                     #[cfg(feature = "tracing")]
                     tracing::warn!("Unable to connect: {error:?}");
                     #[cfg(not(feature = "tracing"))]
-                    let _ = &error;
+                    let _: &_ = &error;
                     attempt = attempt.saturating_add(1);
                 }
             }
@@ -266,7 +274,7 @@ where
                                     #[cfg(feature = "tracing")]
                                     tracing::warn!(%text, error = %e, "Failed to parse WebSocket message");
                                     #[cfg(not(feature = "tracing"))]
-                                    let _ = (&text, &e);
+                                    let _: (&_, &_) = (&text, &e);
                                 }
                             }
                         }
