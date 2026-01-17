@@ -389,6 +389,10 @@ where
     /// Send a subscription request to the WebSocket server.
     pub fn send<R: Serialize>(&self, request: &R) -> Result<()> {
         let json = serde_json::to_string(request)?;
+
+        #[cfg(feature = "tracing")]
+        tracing::debug!(request = %json, "Sending WebSocket request");
+
         self.sender_tx
             .send(json)
             .map_err(|_e| WsError::ConnectionClosed)?;

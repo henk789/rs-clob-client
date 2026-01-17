@@ -188,7 +188,6 @@ impl SubscriptionManager {
         }
 
         // Check if we need to send a new subscription request
-        let topic_exists = self.subscribed_topics.contains(&topic_type);
         let is_new = !self.active_subs.iter().any(|entry| {
             entry.value().topic_type == topic_type && entry.value().filters == subscription.filters
         });
@@ -203,7 +202,7 @@ impl SubscriptionManager {
             );
 
             let request = SubscriptionRequest::subscribe(vec![subscription.clone()]);
-            self.connection.send(&request);
+            let _ = self.connection.send(&request);
         } else {
             #[cfg(feature = "tracing")]
             tracing::debug!(

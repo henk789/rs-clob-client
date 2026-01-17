@@ -154,7 +154,7 @@ impl Serialize for Subscription {
             // Chainlink endpoint expects filters as a JSON string (escaped),
             // while other endpoints (like Binance crypto_prices) expect raw JSON.
             // See: https://github.com/Polymarket/rs-clob-client/issues/136
-            if self.topic == "crypto_prices_chainlink" {
+            if self.topic == "crypto_prices_chainlink" || self.topic == "crypto_prices" {
                 // Chainlink: emit filters as string, e.g. "{\"symbol\":\"btc/usd\"}"
                 map.serialize_entry("filters", filters)?;
             } else if self.topic == "activity" && self.msg_type == "trades" {
