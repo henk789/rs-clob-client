@@ -212,14 +212,8 @@ impl<S: State> Client<S> {
     }
 
     /// Subscribe to trade events.
-    pub fn subscribe_trades(
-        &self,
-        filter: Option<String>,
-    ) -> Result<impl Stream<Item = Result<Trade>>> {
-        let mut subscription = Subscription::trades();
-        if let Some(filter_string) = filter {
-            subscription.filters = Some(filter_string);
-        }
+    pub fn subscribe_trades(&self) -> Result<impl Stream<Item = Result<Trade>>> {
+        let subscription = Subscription::trades();
         let stream = self.inner.subscriptions.subscribe(subscription)?;
 
         Ok(stream.filter_map(|msg_result| async move {
@@ -231,12 +225,9 @@ impl<S: State> Client<S> {
     }
 
     // /// Unsubscribe from trade events.
-    pub fn unsubscribe_trades(&self, filter: Option<String>) {
-        let mut subscription = Subscription::trades();
-        if let Some(filter_string) = filter {
-            subscription.filters = Some(filter_string);
-        }
-        let stream = self.inner.subscriptions.unsubscribe(subscription);
+    pub fn unsubscribe_trades(&self) {
+        let topic = TopicType::new("activity".to_owned(), "trades".to_owned());
+        let _ = self.inner.subscriptions.unsubscribe(&[topic]);
     }
 
     /// Subscribe to raw RTDS messages for a custom topic/type combination.

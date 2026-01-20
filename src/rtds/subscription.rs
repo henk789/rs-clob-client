@@ -266,44 +266,6 @@ impl SubscriptionManager {
         })
     }
 
-    /// Unsubscribe from a topic with the given configuration.
-    pub fn unsubscribe(&self, subscription: Subscription) {
-        let topic_type = TopicType::new(subscription.topic.clone(), subscription.msg_type.clone());
-
-        let sub_id = format!(
-            "{}:{}.{}",
-            topic_type.topic,
-            topic_type.msg_type,
-            subscription.filters.as_deref().unwrap_or_default()
-        );
-
-        if self.active_subs.remove(&sub_id).is_some() {
-            #[cfg(feature = "tracing")]
-            tracing::debug!(
-                topic = %subscription.topic,
-                msg_type = %subscription.msg_type,
-                filter = ?subscription.filters,
-                "Unsubscribing from RTDS topic"
-            );
-
-            let request = SubscriptionRequest::unsubscribe(vec![subscription]);
-
-            if let Err(e) = self.connection.send(&request) {
-                #[cfg(feature = "tracing")]
-                tracing::warn!("Failed to send unsubscribe request: {}", e);
-            }
-
-            let topic_still_active = self
-                .active_subs
-                .iter()
-                .any(|entry| entry.value().topic_type == topic_type);
-
-            if !topic_still_active {
-                self.subscribed_topics.remove(&topic_type);
-            }
-        }
-    }
-
     /// Get information about all active subscriptions.
     #[must_use]
     pub fn active_subscriptions(&self) -> Vec<SubscriptionInfo> {
