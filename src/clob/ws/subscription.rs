@@ -412,6 +412,28 @@ impl SubscriptionManager {
         })
     }
 
+    pub fn subscribe_raw(&self) -> Result<impl Stream<Item = Result<WsMessage>> + use<>> {
+        let mut rx = self.connection.subscribe();
+
+        Ok(try_stream! {
+            loop {
+                match rx.recv().await {
+                    Ok(msg) => {
+                        yield msg;
+                    }
+                    Err(RecvError::Lagged(n)) => {
+                        #[cfg(feature = "tracing")]
+                        tracing::warn!("Subscription lagged, missed {n} messages");
+                        Err(WsError::Lagged { count: n })?;
+                    }
+                    Err(RecvError::Closed) => {
+                        break;
+                    }
+                }
+            }
+        })
+    }
+
     /// Get information about all active subscriptions.
     #[must_use]
     pub fn active_subscriptions(&self) -> HashMap<ChannelType, Vec<SubscriptionInfo>> {

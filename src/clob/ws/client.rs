@@ -358,6 +358,13 @@ impl<S: State> Client<S> {
         }))
     }
 
+    pub fn get_raw_stream(&self) -> Result<impl Stream<Item = Result<WsMessage>>> {
+        self.inner
+            .get_or_create_channel(ChannelType::Market)?
+            .subscriptions
+            .subscribe_raw()
+    }
+
     /// Get the current connection state for a specific channel.
     ///
     /// Returns [`ConnectionState::Disconnected`] if the channel has not been
