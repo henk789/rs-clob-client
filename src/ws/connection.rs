@@ -29,7 +29,7 @@ use crate::{Result, error::Error};
 type WsStream = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 /// Broadcast channel capacity for incoming messages.
-const BROADCAST_CAPACITY: usize = 1024;
+const BROADCAST_CAPACITY: usize = 4096;
 
 /// Connection state tracking.
 #[non_exhaustive]
@@ -293,7 +293,8 @@ where
                             ));
                         }
                         m => {
-                            println!("Ignoring non-text WebSocket message {:?}", m);
+                            #[cfg(feature = "tracing")]
+                            tracing::debug!(?m, "Ignoring non-text WebSocket message");
                             // Ignore binary frames and unsolicited PONG replies.
                         }
                     }

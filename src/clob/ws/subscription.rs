@@ -424,7 +424,7 @@ impl SubscriptionManager {
                     Err(RecvError::Lagged(n)) => {
                         #[cfg(feature = "tracing")]
                         tracing::warn!("Subscription lagged, missed {n} messages");
-                        Err(WsError::Lagged { count: n })?;
+                        // Err(WsError::Lagged { count: n })?;
                     }
                     Err(RecvError::Closed) => {
                         break;

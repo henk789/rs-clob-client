@@ -4,7 +4,7 @@
 
 use bon::Builder;
 use chrono::{DateTime, NaiveDate, Utc};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{DefaultOnNull, DisplayFromStr, NoneAsEmptyString, serde_as};
 
 use super::{ActivityType, Side};
@@ -172,7 +172,7 @@ pub struct ClosedPosition {
 /// Returned by the `/trades` endpoint. Represents an executed order where
 /// outcome tokens were bought or sold.
 #[serde_as]
-#[derive(Debug, Clone, Deserialize, Builder)]
+#[derive(Debug, Clone, Deserialize, Serialize, Builder)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct Trade {
